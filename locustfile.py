@@ -18,10 +18,10 @@ class ChatUser(HttpUser):
                     {
                         "content": random.choice(
                             [
-                                "What is included in my Northwind Health Plus plan that is not in standard?",
-                                "What does a Product Manager do?",
-                                "What happens in a performance review?",
-                                "Whats your whistleblower policy?",
+                                "What does a modern finance function look like?",
+                                "What does the future role of a CFO look like?",
+                                "What skills are required of a CFO of the future?",
+                                "How will the role of CFO change for a future finance function?",
                             ]
                         ),
                         "role": "user",
