@@ -13,9 +13,13 @@ const DEFAULT_EXAMPLES: string[] = [
 ];
 
 const GPT4V_EXAMPLES: string[] = [
-    "Compare the impact of interest rates and GDP in financial markets.",
-    "What is the expected trend for the S&P 500 index over the next five years? Compare it to the past S&P 500 performance",
-    "Can you identify any correlation between oil prices and stock market trends?"
+    "What does a modern finance function look like?",
+    "What does the future role of a CFO look like?",
+    "What skills are required of a CFO of the future?",
+    "How will the role of CFO change for a future finance function?",
+    "What strategic skills are required for a future finance function?",
+    "What are the core principles of a finance stewardship programme?",
+    "What attributes will allow finance to increase process efficiencies?"
 ];
 
 interface Props {
