@@ -2,6 +2,8 @@ import { Outlet, NavLink, Link } from "react-router-dom";
 
 import github from "../../assets/github.svg";
 
+import mtn from "../../assets/MTN-Logo.png";
+
 import styles from "./Layout.module.css";
 
 import { useLogin } from "../../authConfig";
@@ -13,6 +15,7 @@ const Layout = () => {
         <div className={styles.layout}>
             <header className={styles.header} role={"banner"}>
                 <div className={styles.headerContainer}>
+                    <img src={mtn} alt="MTN logo" aria-label="MTN" height="80px" className={styles.mtnLogo} />
                     <Link to="/" className={styles.headerTitleContainer}>
                         <h3 className={styles.headerTitle}>FinStewardConnect</h3>
                     </Link>
