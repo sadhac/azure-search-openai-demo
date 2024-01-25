@@ -17,7 +17,7 @@ const Layout = () => {
                 <div className={styles.headerContainer}>
                     <div className={styles.headerTitleContainer}>
                         <img src={mtn} alt="MTN logo" aria-label="MTN" className={styles.mtnLogo} />
-                        <h3 style={{ marginLeft: "5px" }}>FinStewardConnect</h3>
+                        <h3 style={{ marginLeft: "10px" }}>FinStewardConnect</h3>
                     </div>
                     <nav>
                         <ul className={styles.headerNavList}>
