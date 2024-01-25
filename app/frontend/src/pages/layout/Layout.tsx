@@ -15,10 +15,10 @@ const Layout = () => {
         <div className={styles.layout}>
             <header className={styles.header} role={"banner"}>
                 <div className={styles.headerContainer}>
-                    <img src={mtn} alt="MTN logo" aria-label="MTN" height="80px" className={styles.mtnLogo} />
-                    <Link to="/" className={styles.headerTitleContainer}>
-                        <h3 className={styles.headerTitle}>FinStewardConnect</h3>
-                    </Link>
+                    <div className={styles.headerTitleContainer}>
+                        <img src={mtn} alt="MTN logo" aria-label="MTN" className={styles.mtnLogo} />
+                        <h3 style={{ marginLeft: "5px" }}>FinStewardConnect</h3>
+                    </div>
                     <nav>
                         <ul className={styles.headerNavList}>
                             <li>
