@@ -262,7 +262,7 @@ const Chat = () => {
                     {!lastQuestionRef.current ? (
                         <div className={styles.chatEmptyState}>
                             <img src={MTNBotIcon} width="150" />
-                            <h1 className={styles.chatEmptyStateTitle}>Finance Steward Framework</h1>
+                            <h1 className={styles.chatEmptyStateTitle}>Finance Stewardship Framework</h1>
                             <h2 className={styles.chatEmptyStateSubtitle}>Ask me about the framework</h2>
                             <ExampleList onExampleClicked={onExampleClicked} useGPT4V={useGPT4V} />
                         </div>
