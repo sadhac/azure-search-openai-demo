@@ -3,23 +3,15 @@ import { Example } from "./Example";
 import styles from "./Example.module.css";
 
 const DEFAULT_EXAMPLES: string[] = [
-    "What does a modern finance function look like?",
-    "What does the future role of a CFO look like?",
-    "What skills are required of a CFO of the future?",
-    "How will the role of CFO change for a future finance function?",
-    "What strategic skills are required for a future finance function?",
-    "What are the core principles of a finance stewardship programme?",
-    "What attributes will allow finance to increase process efficiencies?"
+    "How should I behave as a CFO?",
+    "What are the essential skills-set of the CFO?",
+    "What are the roles a modern CFO is expected to play?"
 ];
 
 const GPT4V_EXAMPLES: string[] = [
-    "What does a modern finance function look like?",
-    "What does the future role of a CFO look like?",
-    "What skills are required of a CFO of the future?",
-    "How will the role of CFO change for a future finance function?",
-    "What strategic skills are required for a future finance function?",
-    "What are the core principles of a finance stewardship programme?",
-    "What attributes will allow finance to increase process efficiencies?"
+    "how should I behave as a CFO?",
+    "What are the essential skills-set of the CFO?",
+    "What are the roles a modern CFO is expected to play?"
 ];
 
 interface Props {
