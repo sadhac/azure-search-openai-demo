@@ -67,7 +67,7 @@ click==8.1.7
     #   flask
     #   quart
     #   uvicorn
-cryptography==42.0.2
+cryptography==42.0.3
     # via
     #   -r requirements.in
     #   azure-identity
@@ -81,7 +81,7 @@ distro==1.9.0
     # via openai
 ecdsa==0.18.0
     # via python-jose
-fixedint==0.1.6
+fixedint==0.2.0
     # via azure-monitor-opentelemetry-exporter
 flask==3.0.2
     # via quart
@@ -99,7 +99,7 @@ h2==4.1.0
     # via hypercorn
 hpack==4.0.0
     # via h2
-httpcore==1.0.2
+httpcore==1.0.3
     # via httpx
 httpx==0.26.0
     # via openai
@@ -113,7 +113,7 @@ idna==3.6
     #   httpx
     #   requests
     #   yarl
-importlib-metadata==6.11.0
+importlib-metadata==7.0.1
     # via opentelemetry-api
 isodate==0.6.1
     # via
@@ -317,7 +317,7 @@ tiktoken==0.6.0
     # via -r requirements.in
 tqdm==4.66.2
     # via openai
-types-pillow==10.2.0.20240206
+types-pillow==10.2.0.20240213
     # via -r requirements.in
 types-pytz==2024.1.0.20240203
     # via pandas-stubs
