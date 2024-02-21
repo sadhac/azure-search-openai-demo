@@ -67,7 +67,7 @@ click==8.1.7
     #   flask
     #   quart
     #   uvicorn
-cryptography==42.0.2
+cryptography==42.0.4
     # via
     #   -r requirements.in
     #   azure-identity
@@ -155,7 +155,9 @@ numpy==1.26.4
 oauthlib==3.2.2
     # via requests-oauthlib
 openai[datalib]==1.12.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   openai
 opentelemetry-api==1.22.0
     # via
     #   azure-core-tracing-opentelemetry
@@ -274,7 +276,9 @@ pydantic==2.6.1
 pydantic-core==2.16.2
     # via pydantic
 pyjwt[crypto]==2.8.0
-    # via msal
+    # via
+    #   msal
+    #   pyjwt
 python-dateutil==2.8.2
     # via pandas
 python-jose[cryptography]==3.3.0

@@ -51,7 +51,7 @@ cffi==1.16.0
     # via cryptography
 charset-normalizer==3.3.2
     # via requests
-cryptography==42.0.2
+cryptography==42.0.4
     # via
     #   -r requirements.in
     #   azure-identity
@@ -102,7 +102,9 @@ numpy==1.26.4
     #   pandas
     #   pandas-stubs
 openai[datalib]==1.12.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   openai
 packaging==23.2
     # via msal-extensions
 pandas==2.2.0
@@ -124,7 +126,9 @@ pydantic==2.6.1
 pydantic-core==2.16.2
     # via pydantic
 pyjwt[crypto]==2.8.0
-    # via msal
+    # via
+    #   msal
+    #   pyjwt
 pymupdf==1.23.21
     # via -r requirements.in
 pymupdfb==1.23.9
