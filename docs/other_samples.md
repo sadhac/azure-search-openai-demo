@@ -1,4 +1,4 @@
-# Alternative RAG chat samples
+# RAG chat: Alternative RAG chat samples
 
 There are an increasingly large number of ways to build RAG chat apps.
 
@@ -15,7 +15,7 @@ They do not all support the same features as this repo, but they provide a good 
 ## Other Python samples
 
 Another popular repository for this use case is here:
-https://github.com/Microsoft/sample-app-aoai-chatGPT/
+[https://github.com/Microsoft/sample-app-aoai-chatGPT/](https://github.com/Microsoft/sample-app-aoai-chatGPT/)
 
 That repository is designed for use by customers using Azure OpenAI studio and Azure Portal for setup. It also includes `azd` support for folks who want to deploy it completely from scratch.
 
@@ -30,14 +30,19 @@ Feature comparison:
 | --- | --- | --- |
 | RAG approach | Multiple approaches | Only via ChatCompletion API data_sources |
 | Vector support | ✅ Yes | ✅ Yes |
-| Data ingestion | ✅ Yes (PDF) | ✅ Yes (PDF, TXT, MD, HTML) |
-| Persistent chat history | ❌ No (browser tab only) | ✅ Yes, in CosmosDB |
+| Data ingestion | ✅ Yes ([Many formats](data_ingestion.md#supported-document-formats)) | ✅ Yes ([Many formats](https://learn.microsoft.com/azure/ai-services/openai/concepts/use-your-data?tabs=ai-search#data-formats-and-file-types)) |
+| Persistent chat history | ✅ Yes | ✅ Yes |
+| User feedback | ❌ No | ✅ Yes |
+| GPT-4-vision |  ✅ Yes | ❌ No |
+| Auth + ACL |  ✅ Yes | ✅ Yes |
+| User upload |  ✅ Yes | ❌ No |
+| Speech I/O | ✅ Yes | ❌ No |
 
 Technology comparison:
 
 | Tech | azure-search-openai-demo | sample-app-aoai-chatGPT |
 | --- | --- | --- |
 | Frontend | React | React |
-| Backend | Python (Quart) | Python (Flask) |
-| Vector DB | Azure AI Search | Azure AI Search |
+| Backend | Python (Quart) | Python (Quart) |
+| Vector DB | Azure AI Search | Azure AI Search, CosmosDB Mongo vCore, ElasticSearch, Pinecone, AzureML |
 | Deployment | Azure Developer CLI (azd) | Azure Portal, az, azd |

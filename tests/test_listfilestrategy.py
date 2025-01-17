@@ -5,12 +5,13 @@ import tempfile
 
 import pytest
 
-from .mocks import MockAzureCredential
-from scripts.prepdocslib.listfilestrategy import (
+from prepdocslib.listfilestrategy import (
     ADLSGen2ListFileStrategy,
     File,
     LocalListFileStrategy,
 )
+
+from .mocks import MockAzureCredential
 
 
 def test_file_filename():
@@ -45,6 +46,17 @@ def test_file_filename_to_id():
     # test filenaming starting with unicode
     empty.name = "ファイル名.pdf"
     assert File(empty).filename_to_id() == "file-______pdf-E38395E382A1E382A4E383ABE5908D2E706466"
+
+
+def test_file_filename_to_id_acls():
+    empty = io.BytesIO()
+    empty.name = "foo.pdf"
+    filename_id = File(empty).filename_to_id()
+    filename_id2 = File(empty, acls={"oids": ["A-USER-ID"]}).filename_to_id()
+    filename_id3 = File(empty, acls={"groups": ["A-GROUP-ID"]}).filename_to_id()
+    filename_id4 = File(empty, acls={"oids": ["A-USER-ID"], "groups": ["A-GROUP-ID"]}).filename_to_id()
+    # Assert that all filenames are unique
+    assert len(set([filename_id, filename_id2, filename_id3, filename_id4])) == 4
 
 
 @pytest.mark.asyncio
