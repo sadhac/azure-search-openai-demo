@@ -47,7 +47,7 @@ azure-core-tracing-opentelemetry==1.0.0b11
     # via azure-monitor-opentelemetry
 azure-cosmos==4.9.0
     # via -r requirements.in
-azure-identity==1.17.1
+azure-identity==1.23.1
     # via
     #   -r requirements.in
     #   msgraph-sdk
