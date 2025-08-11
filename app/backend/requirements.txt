@@ -121,7 +121,7 @@ h2==4.1.0
     # via
     #   httpx
     #   hypercorn
-hpack==4.0.0
+hpack==4.1.0
     # via h2
 httpcore==1.0.9
     # via httpx
