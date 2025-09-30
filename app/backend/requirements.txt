@@ -54,7 +54,7 @@ azure-identity==1.17.1
     #   msgraph-sdk
 azure-monitor-opentelemetry==1.6.13
     # via -r requirements.in
-azure-monitor-opentelemetry-exporter==1.0.0b40
+azure-monitor-opentelemetry-exporter==1.0.0b42
     # via azure-monitor-opentelemetry
 azure-search-documents==11.7.0b1
     # via -r requirements.in
