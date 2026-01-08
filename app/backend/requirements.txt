@@ -329,7 +329,7 @@ priority==2.0.0
     # via hypercorn
 prompty==0.1.50
     # via -r requirements.in
-propcache==0.2.0
+propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
