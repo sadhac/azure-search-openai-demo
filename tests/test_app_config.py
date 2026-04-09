@@ -309,8 +309,8 @@ async def test_app_config_for_client(client):
 
 @pytest.mark.asyncio
 async def test_app_config_for_reasoning(monkeypatch, minimal_env):
-    monkeypatch.setenv("AZURE_OPENAI_CHATGPT_MODEL", "o3-mini")
-    monkeypatch.setenv("AZURE_OPENAI_CHATGPT_DEPLOYMENT", "o3-mini")
+    monkeypatch.setenv("AZURE_OPENAI_CHATGPT_MODEL", "gpt-5")
+    monkeypatch.setenv("AZURE_OPENAI_CHATGPT_DEPLOYMENT", "gpt-5")
     quart_app = app.create_app()
     async with quart_app.test_app() as test_app:
         client = test_app.test_client()
@@ -322,24 +322,10 @@ async def test_app_config_for_reasoning(monkeypatch, minimal_env):
 
 
 @pytest.mark.asyncio
-async def test_app_config_for_reasoning_without_streaming(monkeypatch, minimal_env):
-    monkeypatch.setenv("AZURE_OPENAI_CHATGPT_MODEL", "o1")
-    monkeypatch.setenv("AZURE_OPENAI_CHATGPT_DEPLOYMENT", "o1")
-    quart_app = app.create_app()
-    async with quart_app.test_app() as test_app:
-        client = test_app.test_client()
-        response = await client.get("/config")
-        assert response.status_code == 200
-        result = await response.get_json()
-        assert result["streamingEnabled"] is False
-        assert result["showReasoningEffortOption"] is True
-
-
-@pytest.mark.asyncio
 async def test_app_config_for_reasoning_override_effort(monkeypatch, minimal_env):
     monkeypatch.setenv("AZURE_OPENAI_REASONING_EFFORT", "low")
-    monkeypatch.setenv("AZURE_OPENAI_CHATGPT_MODEL", "o3-mini")
-    monkeypatch.setenv("AZURE_OPENAI_CHATGPT_DEPLOYMENT", "o3-mini")
+    monkeypatch.setenv("AZURE_OPENAI_CHATGPT_MODEL", "gpt-5")
+    monkeypatch.setenv("AZURE_OPENAI_CHATGPT_DEPLOYMENT", "gpt-5")
     quart_app = app.create_app()
     async with quart_app.test_app() as test_app:
         client = test_app.test_client()
@@ -354,4 +340,6 @@ async def test_app_config_for_reasoning_override_effort(monkeypatch, minimal_env
 def test_app_enables_azure_monitor_when_connection_string_set(monkeypatch):
     mock_connection_string = "InstrumentationKey=12345678-1234-1234-1234-123456789012"
     monkeypatch.setenv("APPLICATIONINSIGHTS_CONNECTION_STRING", mock_connection_string)
-    app.create_app()
+    with mock.patch("app.configure_azure_monitor") as mock_configure:
+        app.create_app()
+        mock_configure.assert_called_once()
