@@ -315,7 +315,7 @@ pillow==12.2.0
     # via -r requirements.in
 priority==2.0.0
     # via hypercorn
-propcache==0.2.0
+propcache==0.5.2
     # via
     #   aiohttp
     #   yarl
