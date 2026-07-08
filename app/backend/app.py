@@ -516,7 +516,9 @@ async def setup_clients():
     )
 
     knowledgebase_client = KnowledgeBaseRetrievalClient(
-        endpoint=AZURE_SEARCH_ENDPOINT, knowledge_base_name=AZURE_SEARCH_KNOWLEDGEBASE_NAME, credential=azure_credential
+        endpoint=AZURE_SEARCH_ENDPOINT,
+        knowledge_base_name=AZURE_SEARCH_KNOWLEDGEBASE_NAME,
+        credential=azure_credential,
     )
     knowledgebase_client_with_web = None
     knowledgebase_client_with_sharepoint = None
