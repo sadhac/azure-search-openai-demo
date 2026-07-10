@@ -124,6 +124,9 @@ param azureOpenAiDisableKeys bool = true
 param openAiServiceName string = ''
 param openAiResourceGroupName string = ''
 
+@description('Name of the Microsoft Foundry project to create inside the Foundry account. Leave empty to generate one.')
+param foundryProjectName string = ''
+
 param speechServiceResourceGroupName string = ''
 param speechServiceLocation string = ''
 param speechServiceName string = ''
@@ -341,9 +344,6 @@ param useUserUpload bool = false
 param useLocalPdfParser bool = false
 param useLocalHtmlParser bool = false
 
-@description('Use AI project')
-param useAiProject bool = false
-
 var abbrs = loadJsonContent('abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = { 'azd-env-name': environmentName }
@@ -522,7 +522,7 @@ var appEnvVariables = {
   AZURE_OPENAI_REASONING_EFFORT: defaultReasoningEffort
   AGENTIC_KNOWLEDGEBASE_REASONING_EFFORT: defaultRetrievalReasoningEffort
   // Specific to Azure OpenAI
-  AZURE_OPENAI_SERVICE: isAzureOpenAiHost && deployAzureOpenAi ? openAi!.outputs.name : ''
+  AZURE_OPENAI_SERVICE: deployFoundryAccount ? foundryAccount!.outputs.name : ''
   AZURE_OPENAI_CHATGPT_DEPLOYMENT: chatGpt.deploymentName
   AZURE_OPENAI_EMB_DEPLOYMENT: embedding.deploymentName
   AZURE_OPENAI_knowledgeBase_MODEL: knowledgeBase.modelName
@@ -767,17 +767,30 @@ var openAiDeployments = concat(
     : []
 )
 
-module openAi 'br/public:avm/res/cognitive-services/account:0.7.2' = if (isAzureOpenAiHost && deployAzureOpenAi) {
-  name: 'openai'
+// Provision a Foundry account + project only when we own the account (deployFoundryAccount):
+//   - openAiHost == 'azure': create a Microsoft Foundry account (AIServices + project
+//     management) hosting the models, plus a Foundry project. A set openAiServiceName (reused
+//     from a prior output or user-chosen) is reused idempotently so redeploys stay stable.
+//   - openAiHost == 'azure_custom' (or non-azure): bring-your-own — account, deployments,
+//     project, private endpoint, and role assignments are all skipped; the backend uses
+//     AZURE_OPENAI_CUSTOM_URL and you manage everything.
+// openAiServiceName can't signal bring-your-own: AZURE_OPENAI_SERVICE is also an output azd
+// writes back after every deploy, so it's set on redeploys of our own account too. openAiHost
+// is the intent signal.
+var deployFoundryAccount = isAzureOpenAiHost && deployAzureOpenAi
+
+// Microsoft Foundry account (AIServices) with project management enabled, so the model
+// deployments are hosted on the account and a Foundry project can be created inside it.
+module foundryAccount 'br/public:avm/res/cognitive-services/account:0.15.0' = if (deployFoundryAccount) {
+  name: 'foundry-account'
   scope: az.resourceGroup(openAiResourceGroupNameActual)
   params: {
     name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
     location: openAiLocation
     tags: tags
-    kind: 'OpenAI'
-    customSubDomainName: !empty(openAiServiceName)
-      ? openAiServiceName
-      : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
+    kind: 'AIServices'
+    allowProjectManagement: true
+    customSubDomainName: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
     publicNetworkAccess: publicNetworkAccess
     networkAcls: {
       defaultAction: 'Allow'
@@ -790,6 +803,43 @@ module openAi 'br/public:avm/res/cognitive-services/account:0.7.2' = if (isAzure
   }
 }
 
+// Microsoft Foundry project, hosted inside the Foundry (AIServices) account above.
+// A project is required to open the account in the Microsoft Foundry portal and to use
+// the Foundry / Agents SDKs against FOUNDRY_PROJECT_ENDPOINT.
+var foundryProjectNameResolved = !empty(foundryProjectName) ? foundryProjectName : 'proj-${resourceToken}'
+
+var foundryProjectRoleAssignments = concat(
+  empty(principalId)
+    ? []
+    : [
+        {
+          principalId: principalId
+          roleDefinitionId: 'eadc314b-1a2d-4efa-be10-5d325db5065e' // Azure AI Project Manager
+          principalType: principalType
+        }
+      ],
+  [
+    {
+      principalId: (deploymentTarget == 'appservice')
+        ? backend!.outputs.identityPrincipalId
+        : acaBackend!.outputs.identityPrincipalId
+      roleDefinitionId: '53ca6127-db72-4b80-b1b0-d745d6d5456d' // Azure AI User
+      principalType: 'ServicePrincipal'
+    }
+  ]
+)
+
+module foundryProject 'core/ai/ai-foundry-project.bicep' = if (deployFoundryAccount) {
+  name: 'foundry-project'
+  scope: az.resourceGroup(openAiResourceGroupNameActual)
+  params: {
+    accountName: foundryAccount!.outputs.name
+    projectName: foundryProjectNameResolved
+    location: openAiLocation
+    tags: tags
+    roleAssignments: foundryProjectRoleAssignments
+  }
+}
 // Formerly known as Form Recognizer
 // Does not support bypass
 module documentIntelligence 'br/public:avm/res/cognitive-services/account:0.7.2' = {
@@ -1072,21 +1122,6 @@ module cosmosDb 'br/public:avm/res/document-db/database-account:0.6.1' = if (use
     ]
   }
 }
-
-module ai 'core/ai/ai-environment.bicep' = if (useAiProject) {
-  name: 'ai'
-  scope: resourceGroup
-  params: {
-    // Limited region support: https://learn.microsoft.com/azure/ai-foundry/how-to/develop/evaluate-sdk#region-support
-    location: 'eastus2'
-    tags: tags
-    hubName: 'aihub-${resourceToken}'
-    projectName: 'aiproj-${resourceToken}'
-    storageAccountId: storage.outputs.id
-    applicationInsightsId: !useApplicationInsights ? '' : monitoring!.outputs.applicationInsightsId
-  }
-}
-
 
 // USER ROLES
 var principalType = empty(runningOnGh) && empty(runningOnAdo) ? 'User' : 'ServicePrincipal'
@@ -1396,12 +1431,19 @@ module isolation 'network-isolation.bicep' = if (usePrivateEndpoint) {
 
 var environmentData = environment()
 
-var openAiPrivateEndpointConnection = (usePrivateEndpoint && isAzureOpenAiHost && deployAzureOpenAi)
+var openAiPrivateEndpointConnection = (usePrivateEndpoint && deployFoundryAccount)
   ? [
       {
         groupId: 'account'
-        dnsZoneName: 'privatelink.openai.azure.com'
-        resourceIds: [openAi!.outputs.resourceId]
+        // Microsoft Foundry (AIServices) accounts resolve the services.ai.azure.com zone in
+        // addition to openai.azure.com and cognitiveservices.azure.com.
+        // https://learn.microsoft.com/azure/private-link/private-endpoint-dns#ai--machine-learning
+        dnsZoneNames: [
+          'privatelink.services.ai.azure.com'
+          'privatelink.openai.azure.com'
+          'privatelink.cognitiveservices.azure.com'
+        ]
+        resourceIds: [foundryAccount!.outputs.resourceId]
       }
     ]
   : []
@@ -1410,7 +1452,7 @@ var cognitiveServicesPrivateEndpointConnection = (usePrivateEndpoint && (!useLoc
   ? [
       {
         groupId: 'account'
-        dnsZoneName: 'privatelink.cognitiveservices.azure.com'
+        dnsZoneNames: ['privatelink.cognitiveservices.azure.com']
         // Only include generic Cognitive Services-based resources (Form Recognizer / Vision / Content Understanding)
         // Azure OpenAI uses its own privatelink.openai.azure.com zone and already has a separate private endpoint above.
         resourceIds: concat(
@@ -1426,7 +1468,7 @@ var containerAppsPrivateEndpointConnection = (usePrivateEndpoint && deploymentTa
   ? [
       {
         groupId: 'managedEnvironments'
-        dnsZoneName: 'privatelink.${location}.azurecontainerapps.io'
+        dnsZoneNames: ['privatelink.${location}.azurecontainerapps.io']
         resourceIds: [containerApps!.outputs.environmentId]
       }
     ]
@@ -1436,7 +1478,7 @@ var appServicePrivateEndpointConnection = (usePrivateEndpoint && deploymentTarge
   ? [
       {
         groupId: 'sites'
-        dnsZoneName: 'privatelink.azurewebsites.net'
+        dnsZoneNames: ['privatelink.azurewebsites.net']
         resourceIds: [backend!.outputs.id]
       }
     ]
@@ -1445,17 +1487,17 @@ var otherPrivateEndpointConnections = (usePrivateEndpoint)
   ? [
       {
         groupId: 'blob'
-        dnsZoneName: 'privatelink.blob.${environmentData.suffixes.storage}'
+        dnsZoneNames: ['privatelink.blob.${environmentData.suffixes.storage}']
         resourceIds: concat([storage.outputs.id], useUserUpload ? [userStorage!.outputs.id] : [])
       }
       {
         groupId: 'searchService'
-        dnsZoneName: 'privatelink.search.windows.net'
+        dnsZoneNames: ['privatelink.search.windows.net']
         resourceIds: [searchService.outputs.id]
       }
       {
         groupId: 'sql'
-        dnsZoneName: 'privatelink.documents.azure.com'
+        dnsZoneNames: ['privatelink.documents.azure.com']
         resourceIds: (useAuthentication && useChatHistoryCosmos) ? [cosmosDb!.outputs.resourceId] : []
       }
     ]
@@ -1476,6 +1518,10 @@ module privateEndpoints 'private-endpoints.bicep' = if (usePrivateEndpoint) {
     vnetName: isolation!.outputs.vnetName
     vnetPeSubnetId: isolation!.outputs.backendSubnetId
   }
+  // Wait for the Foundry project to be created before creating the account private endpoint.
+  // The account PUT returns before it is fully provisioned; project creation is the convergence
+  // point that avoids AccountProvisioningStateInvalid errors on the private endpoint.
+  dependsOn: [foundryProject]
 }
 
 // Used to read index definitions (required when using authentication)
@@ -1543,9 +1589,14 @@ output AZURE_OPENAI_EMB_DIMENSIONS int = embedding.dimensions
 output AZURE_OPENAI_CHATGPT_MODEL string = chatGpt.modelName
 
 // Specific to Azure OpenAI
-output AZURE_OPENAI_SERVICE string = isAzureOpenAiHost && deployAzureOpenAi ? openAi!.outputs.name : ''
-output AZURE_OPENAI_ENDPOINT string = isAzureOpenAiHost && deployAzureOpenAi ? openAi!.outputs.endpoint : ''
+output AZURE_OPENAI_SERVICE string = deployFoundryAccount ? foundryAccount!.outputs.name : ''
+output AZURE_OPENAI_ENDPOINT string = deployFoundryAccount ? foundryAccount!.outputs.endpoint : ''
 output AZURE_OPENAI_RESOURCE_GROUP string = isAzureOpenAiHost ? openAiResourceGroupNameActual : ''
+
+// Microsoft Foundry project hosted inside the Foundry (AIServices) account above.
+output FOUNDRY_PROJECT_NAME string = deployFoundryAccount ? foundryProject!.outputs.name : ''
+output FOUNDRY_PROJECT_ENDPOINT string = deployFoundryAccount ? foundryProject!.outputs.endpoint : ''
+
 output AZURE_OPENAI_CHATGPT_DEPLOYMENT string = isAzureOpenAiHost ? chatGpt.deploymentName : ''
 output AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION string = isAzureOpenAiHost ? chatGpt.deploymentVersion : ''
 output AZURE_OPENAI_CHATGPT_DEPLOYMENT_SKU string = isAzureOpenAiHost ? chatGpt.deploymentSkuName : ''
@@ -1553,7 +1604,6 @@ output AZURE_OPENAI_EMB_DEPLOYMENT string = isAzureOpenAiHost ? embedding.deploy
 output AZURE_OPENAI_EMB_DEPLOYMENT_VERSION string = isAzureOpenAiHost ? embedding.deploymentVersion : ''
 output AZURE_OPENAI_EMB_DEPLOYMENT_SKU string = isAzureOpenAiHost ? embedding.deploymentSkuName : ''
 output AZURE_OPENAI_EVAL_DEPLOYMENT string = isAzureOpenAiHost && useEval ? eval.deploymentName : ''
-output AZURE_OPENAI_EVAL_DEPLOYMENT_VERSION string = isAzureOpenAiHost && useEval ? eval.deploymentVersion : ''
 output AZURE_OPENAI_EVAL_DEPLOYMENT_SKU string = isAzureOpenAiHost && useEval ? eval.deploymentSkuName : ''
 output AZURE_OPENAI_EVAL_MODEL string = isAzureOpenAiHost && useEval ? eval.modelName : ''
 output AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT string = isAzureOpenAiHost && useAgenticKnowledgeBase ? knowledgeBase.deploymentName : ''
@@ -1595,6 +1645,7 @@ output AZURE_USERSTORAGE_ACCOUNT string = useUserUpload ? userStorage!.outputs.n
 output AZURE_USERSTORAGE_CONTAINER string = userStorageContainerName
 output AZURE_USERSTORAGE_RESOURCE_GROUP string = storageResourceGroupNameActual
 
+
 output AZURE_IMAGESTORAGE_CONTAINER string = useMultimodal ? imageStorageContainerName : ''
 
 // Cloud ingestion function skill endpoints & resource IDs
@@ -1605,8 +1656,6 @@ output TEXT_PROCESSOR_SKILL_ENDPOINT string = useCloudIngestion ? 'https://${fun
 output DOCUMENT_EXTRACTOR_SKILL_AUTH_RESOURCE_ID string = useCloudIngestion ? functions!.outputs.documentExtractorAuthIdentifierUri : ''
 output FIGURE_PROCESSOR_SKILL_AUTH_RESOURCE_ID string = useCloudIngestion ? functions!.outputs.figureProcessorAuthIdentifierUri : ''
 output TEXT_PROCESSOR_SKILL_AUTH_RESOURCE_ID string = useCloudIngestion ? functions!.outputs.textProcessorAuthIdentifierUri : ''
-
-output AZURE_AI_PROJECT string = useAiProject ? ai!.outputs.projectName : ''
 
 output AZURE_USE_AUTHENTICATION bool = useAuthentication
 
